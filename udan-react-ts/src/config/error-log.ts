@@ -1,5 +1,7 @@
-const winston = require("winston");
-const { format } = winston;
+// const winston = require("winston");
+// const { format } = winston;
+
+import { createLogger, transports, format } from "winston";
 const { combine, label, json } = format;
 // const winstonRemoteTransport = require('winston-remote').Transport;
 import { CONFIG } from "./index";
@@ -24,9 +26,9 @@ export const UDAErrorLogger = {
       message =
         "UserID: " + UDAUserAuthData?.authdata?.id + " Error: " + message;
     } catch (e) {}
-    let logger = winston.createLogger({
+    let logger = createLogger({
       transports: [
-        new winston.transports.Http({
+        new transports.Http({
           // ssl: true,
           host: UDA_LOG_URL, // Remote server ip
           port: 443, // Remote server port

@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Spin } from "antd";
 import "../public/css/antd.css";
+import "./util/domJSON";
 import { fetchSearchResults } from "./services/searchService";
 import { login, getUserSession } from "./services/authService";
 import _ from "lodash";

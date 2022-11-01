@@ -43,8 +43,10 @@
     "winston": "^3.8.2",
     "winston-remote": "0.0.6"
   },
+  "main": "index.tsx",
   "scripts": {
     "start": "vite",
+    "serve": "webpack serve --mode development",
     "dev": "tsc && vite",
     "prebuild": "node ./scripts/prebuild.js",
     "build": "webpack build && xcopy src\\logo.* build\\ /S /Y",
@@ -86,6 +88,7 @@
     "babel-jest": "^29.1.2",
     "css-loader": "^6.7.1",
     "cssnano": "^5.1.13",
+    "html-webpack-plugin": "^5.5.0",
     "jest": "^29.1.2",
     "jest-environment-jsdom": "^29.1.2",
     "node-sass": "^7.0.3",
@@ -100,6 +103,7 @@
     "typescript": "^4.6.3",
     "vite": "^2.9.6",
     "vite-plugin-svgr": "^1.1.0",
-    "webpack": "^5.74.0"
+    "webpack": "^5.74.0",
+    "webpack-dev-server": "^4.11.1"
   }
 }

@@ -1,4 +1,4 @@
-import domJSON from "domJson";
+// import domJSON from "domJson";
 import { CONFIG } from "../config";
 import {
   recordClicks,
@@ -787,7 +787,7 @@ export const indexnode = (
     let uda_custom = {
       hasparentclick: false,
       parentnode: {},
-      domJson: domJSON.toJSON(node),
+      domJson: window?.domJSON?.toJSON(node),
     };
     if (hasparentnodeclick) {
       uda_custom.hasparentclick = true;
@@ -1265,7 +1265,7 @@ export const parentUpTo=(el:any, tagName:string)=> {
  */
 export const postClickData = async (node: HTMLElement, text:string) => {
   // console.log(getclickedinputlabels(node));
-  let objectData:any = domJSON.toJSON(node);
+  let objectData:any =window?.domJSON?.toJSON(node);
   objectData.node.outerHTML = node.outerHTML;
   objectData.offset = getAbsoluteOffsets(node);
   console.log(objectData);

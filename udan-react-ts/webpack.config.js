@@ -11,6 +11,7 @@
 
 const path = require('path');
 const webpack = require('webpack')
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
   
@@ -24,6 +25,10 @@ module.exports = {
     './public/css/antd.css'
   ]
   ,
+  devServer: {
+    // publicPath: "/",
+    port: 9000,
+  },
   mode: 'development',// "production" | "development" | "none"
   devtool: 'cheap-module-source-map',// enum
   // enhance debugging by adding meta info for the browser devtools
@@ -94,10 +99,16 @@ module.exports = {
     }),
     new webpack.ProvidePlugin({
       'utils': 'utils'
-    })
-      // new HtmlWebpackPlugin({
-      //     title: 'digitalassist.com'
-      // })
+    }),
+     new HtmlWebpackPlugin({
+       template: "src/index.html", 
+       minify: {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeAttributeQuotes: true
+    },
+    // chunksSortMode: 'dependency'
+    }),
   ],
   resolve: {
     // options for resolving module requests
