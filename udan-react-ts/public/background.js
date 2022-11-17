@@ -63,7 +63,7 @@ async function loginWithChrome() {
 				});
 			});
 		} else {
-			await sendSessionData("UDAAlertMessageData", "UDA: Please login into chrome browser.")
+			await sendSessionData("UDAAlertMessageData", "login")
 		}
 	});
 	return true;
@@ -73,7 +73,7 @@ async function loginWithChrome() {
 async function sendSessionData(sendaction = "UDAUserSessionData", message = '') {
 	let tab = await getTab();
 	if (sendaction === "UDAAlertMessageData") {
-		await chrome.tabs.sendMessage(tab.id, {action: sendaction, data: JSON.stringify(message)});
+		await chrome.tabs.sendMessage(tab.id, {action: sendaction, data: message});
 		return true;
 	} else {
 		let url = new URL(tab.url);
@@ -126,6 +126,7 @@ async function getTab() {
 
 // listen for the requests made from webpage for accessing userdata
 chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
+	console.log(request);
 	if (request.action === "getusersessiondata") {
 		chrome.storage.local.get([cookieName], async function (storedsessiondata) {
 			if (chrome.runtime.lastError) {
@@ -134,12 +135,22 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
 				// looks like chrome storage might have changed so changing the reading the data has been changed. For to work with old version have added the new code to else if statement
 				if (storedsessiondata.hasOwnProperty("sessionkey") && storedsessiondata["sessionKey"] && typeof storedsessiondata["sessionKey"] != 'object') {
 					sessionData = storedsessiondata;
-					await sendSessionData();
+					if(storedsessiondata.hasOwnProperty('authenticated') && storedsessiondata.authenticated) {
+						await sendSessionData();
+					} else {
+						await loginWithChrome();
+					}
 				} else if (storedsessiondata.hasOwnProperty(cookieName) && storedsessiondata[cookieName].hasOwnProperty("sessionkey") && storedsessiondata[cookieName]["sessionKey"] && typeof storedsessiondata[cookieName]["sessionKey"] != 'object') {
 					sessionData = storedsessiondata[cookieName];
-					await sendSessionData();
+					// await sendSessionData();
+					if(storedsessiondata.hasOwnProperty('authenticated') && storedsessiondata.authenticated) {
+						await sendSessionData();
+					} else {
+						await loginWithChrome();
+					}
 				} else {
-					await getSessionKey();
+					await getSessionKey(false);
+					await loginWithChrome();
 				}
 			}
 		});
@@ -148,6 +159,8 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
 		await loginWithChrome();
 	} else if (request.action === "Debugvalueset") {
 		UDADebug = request.data;
+	} else if (request.action === "createSession") {
+		await keycloakStore(request.data);
 	}
 });
 
@@ -160,7 +173,7 @@ async function storeSessionData() {
 }
 
 //getting the sessionkey from backend server
-async function getSessionKey() {
+async function getSessionKey(senddata = true) {
 	let response = await invokeApi(apiHost + "/user/getsessionkey", "GET", null, false);
 	console.log(response);
 	if(!response){
@@ -168,14 +181,17 @@ async function getSessionKey() {
 	}
 	sessionData.sessionkey = response;
 	await storeSessionData();
-	await sendSessionData();
+	if(senddata){
+		await sendSessionData();
+	}
+
 }
 
 //binding the sessionkey and chrome identity id
 async function bindAuthenticatedAccount() {
 	let authdata = {
 		authid: sessionData.authdata.id,
-		emailid: sessionData.authdata.email,
+		emailid: (sessionData.authdata.email)?sessionData.authdata.email:'',
 		authsource: sessionData.authenticationsource
 	};
 	let response = await invokeApi(apiHost + "/user/checkauthid", "POST", authdata);
@@ -190,18 +206,6 @@ async function bindAuthenticatedAccount() {
 //binding the session to the authid
 async function bindAccount(userauthdata) {
 	const usersessiondata = {userauthid: userauthdata.id, usersessionid: sessionData.sessionkey};
-	/*var xhr = new XMLHttpRequest();
-    xhr.open("POST", apihost+"/user/checkusersession", true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.onload = function(event){
-        if(xhr.status === 200){
-            storesessiondata();
-            sendsessiondata("UDAAuthenticatedUserSessionData");
-        } else {
-            console.log(xhr.status+" : "+xhr.statusText);
-        }
-    };
-    xhr.send(JSON.stringify(usersessiondata));*/
 	let response = await invokeApi(apiHost + "/user/checkusersession", "POST", usersessiondata);
 	await storeSessionData();
 	await sendSessionData("UDAAuthenticatedUserSessionData");
@@ -341,4 +345,15 @@ async function invokeApi(url, method, data, parseJson = true) {
 	}
 }
 
+/**
+ * Store keycloak data in chrome extension storage for retrival for other sites
+ */
+async function keycloakStore(data){
+	console.log('creating session at extension');
+	sessionData.authenticationsource = 'keycloak';
+	sessionData.authenticated = true;
+	sessionData.authdata = data;
+	await getSessionKey(false);
+	await bindAuthenticatedAccount();
+}
 
